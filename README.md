@@ -1,188 +1,54 @@
-# Dev Container Features: Self Authoring Template
+# vscode-features
 
-> This repo provides a starting point and example for creating your own custom [dev container Features](https://containers.dev/implementors/features/), hosted for free on GitHub Container Registry.  The example in this repository follows the [dev container Feature distribution specification](https://containers.dev/implementors/features-distribution/).  
->
-> To provide feedback to the specification, please leave a comment [on spec issue #70](https://github.com/devcontainers/spec/issues/70). For more broad feedback regarding dev container Features, please see [spec issue #61](https://github.com/devcontainers/spec/issues/61).
+Personal [dev container Features](https://containers.dev/implementors/features/), published to GitHub Container Registry (GHCR), for setting up my own dev containers consistently. This repo was bootstrapped from the [devcontainers/feature-starter](https://github.com/devcontainers/feature-starter) template.
 
-## Example Contents
+## Features
 
-This repository contains a _collection_ of two Features - `hello` and `color`. These Features serve as simple feature implementations.  Each sub-section below shows a sample `devcontainer.json` alongside example usage of the Feature.
+### `claude-code`
 
-### `hello`
-
-Running `hello` inside the built container will print the greeting provided to it via its `greeting` option.
+Installs the [Claude Code](https://claude.com/claude-code) CLI, adds the official Claude Code VS Code extension, and drops a `CLAUDE.md` into the container so Claude Code has my global instructions available from the first run.
 
 ```jsonc
 {
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
-        "ghcr.io/devcontainers/feature-starter/hello:1": {
-            "greeting": "Hello"
-        }
+        "ghcr.io/sampug/vscode-features/claude-code:1": {}
     }
 }
 ```
 
-```bash
-$ hello
+| Option Id | Description | Type | Default |
+|---|---|---|---|
+| `installCli` | Install the Claude Code CLI using the official native installer | boolean | `true` |
+| `installClaudeMd` | Copy the bundled `CLAUDE.md` to `~/.claude/CLAUDE.md` | boolean | `true` |
 
-Hello, user.
-```
+The `CLAUDE.md` that gets copied in lives at [`src/claude-code/CLAUDE.md`](src/claude-code/CLAUDE.md) — edit it there to change what ships to new containers.
 
-### `color`
+## Repo structure
 
-Running `color` inside the built container will print your favorite color to standard out.
-
-```jsonc
-{
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "features": {
-        "ghcr.io/devcontainers/feature-starter/color:1": {
-            "favorite": "green"
-        }
-    }
-}
-```
-
-```bash
-$ color
-
-my favorite color is green
-```
-
-## Repo and Feature Structure
-
-Similar to the [`devcontainers/features`](https://github.com/devcontainers/features) repo, this repository has a `src` folder.  Each Feature has its own sub-folder, containing at least a `devcontainer-feature.json` and an entrypoint script `install.sh`. 
+Each Feature has its own folder under `src/`, containing at least a `devcontainer-feature.json` and an `install.sh` entrypoint:
 
 ```
 ├── src
-│   ├── hello
+│   ├── claude-code
 │   │   ├── devcontainer-feature.json
-│   │   └── install.sh
-│   ├── color
-│   │   ├── devcontainer-feature.json
-│   │   └── install.sh
-|   ├── ...
-│   │   ├── devcontainer-feature.json
-│   │   └── install.sh
+│   │   ├── install.sh
+│   │   └── CLAUDE.md
 ...
 ```
 
-An [implementing tool](https://containers.dev/supporting#tools) will composite [the documented dev container properties](https://containers.dev/implementors/features/#devcontainer-feature-json-properties) from the feature's `devcontainer-feature.json` file, and execute in the `install.sh` entrypoint script in the container during build time.  Implementing tools are also free to process attributes under the `customizations` property as desired.
+An [implementing tool](https://containers.dev/supporting#tools) composites [the documented properties](https://containers.dev/implementors/features/#devcontainer-feature-json-properties) from `devcontainer-feature.json` and runs `install.sh` inside the container at build time. Options declared in `devcontainer-feature.json` are exported to `install.sh` as environment variables (capitalized, per [option resolution](https://containers.dev/implementors/features/#option-resolution)) — e.g. `installCli` becomes `$INSTALLCLI`.
 
-### Options
+Tests live under `test/<feature>/` and run via the `devcontainer features test` command from `@devcontainers/cli`. See [`test/claude-code/test.sh`](test/claude-code/test.sh) for the current checks.
 
-All available options for a Feature should be declared in the `devcontainer-feature.json`.  The syntax for the `options` property can be found in the [devcontainer Feature json properties reference](https://containers.dev/implementors/features/#devcontainer-feature-json-properties).
+## Versioning & publishing
 
-For example, the `color` feature provides an enum of three possible options (`red`, `gold`, `green`).  If no option is provided in a user's `devcontainer.json`, the value is set to "red".
+Each Feature is versioned independently via the `version` field in its `devcontainer-feature.json`, following semver — see [the spec](https://containers.dev/implementors/features/#versioning).
 
-```jsonc
-{
-    // ...
-    "options": {
-        "favorite": {
-            "type": "string",
-            "enum": [
-                "red",
-                "gold",
-                "green"
-            ],
-            "default": "red",
-            "description": "Choose your favorite color."
-        }
-    }
-}
-```
+[`release.yaml`](.github/workflows/release.yaml) runs on every push to `main` (or manually via `workflow_dispatch`) and publishes each Feature under `src/` to GHCR using [`devcontainers/action`](https://github.com/devcontainers/action). It only pushes a new OCI artifact for a Feature whose `version` actually changed since the last publish — a commit that doesn't bump a feature's version is a no-op for that feature. It also regenerates each Feature's `README.md` from its `devcontainer-feature.json` and opens a PR with the update, rather than committing straight to `main`.
 
-Options are exported as Feature-scoped environment variables.  The option name is captialized and sanitized according to [option resolution](https://containers.dev/implementors/features/#option-resolution).
+That last step needs **"Allow GitHub Actions to create and approve pull requests"** enabled under `Settings > Actions > General > Workflow permissions` — it's off by default on new repos, and without it the doc-update step fails with `GraphQL: GitHub Actions is not permitted to create or approve pull requests`.
 
-```bash
-#!/bin/bash
+[`test.yaml`](.github/workflows/test.yaml) runs the tests under `test/` on every push to `main`, on pull requests, and manually. [`validate.yml`](.github/workflows/validate.yml) lints every `devcontainer-feature.json` on pull requests.
 
-echo "Activating feature 'color'"
-echo "The provided favorite color is: ${FAVORITE}"
-
-...
-```
-
-## Distributing Features
-
-### Versioning
-
-Features are individually versioned by the `version` attribute in a Feature's `devcontainer-feature.json`.  Features are versioned according to the semver specification. More details can be found in [the dev container Feature specification](https://containers.dev/implementors/features/#versioning).
-
-### Publishing
-
-> NOTE: The Distribution spec can be [found here](https://containers.dev/implementors/features-distribution/).  
->
-> While any registry [implementing the OCI Distribution spec](https://github.com/opencontainers/distribution-spec) can be used, this template will leverage GHCR (GitHub Container Registry) as the backing registry.
-
-Features are meant to be easily sharable units of dev container configuration and installation code.  
-
-This repo contains a **GitHub Action** [workflow](.github/workflows/release.yaml) that will publish each Feature to GHCR. 
-
-*Allow GitHub Actions to create and approve pull requests* should be enabled in the repository's `Settings > Actions > General > Workflow permissions` for auto generation of `src/<feature>/README.md` per Feature (which merges any existing `src/<feature>/NOTES.md`).
-
-By default, each Feature will be prefixed with the `<owner/<repo>` namespace.  For example, the two Features in this repository can be referenced in a `devcontainer.json` with:
-
-```
-ghcr.io/devcontainers/feature-starter/color:1
-ghcr.io/devcontainers/feature-starter/hello:1
-```
-
-The provided GitHub Action will also publish a third "metadata" package with just the namespace, eg: `ghcr.io/devcontainers/feature-starter`.  This contains information useful for tools aiding in Feature discovery.
-
-'`devcontainers/feature-starter`' is known as the feature collection namespace.
-
-### Marking Feature Public
-
-Note that by default, GHCR packages are marked as `private`.  To stay within the free tier, Features need to be marked as `public`.
-
-This can be done by navigating to the Feature's "package settings" page in GHCR, and setting the visibility to 'public`.  The URL may look something like:
-
-```
-https://github.com/users/<owner>/packages/container/<repo>%2F<featureName>/settings
-```
-
-<img width="669" alt="image" src="https://user-images.githubusercontent.com/23246594/185244705-232cf86a-bd05-43cb-9c25-07b45b3f4b04.png">
-
-### Adding Features to the Index
-
-If you'd like your Features to appear in our [public index](https://containers.dev/features) so that other community members can find them, you can do the following:
-
-* Go to [github.com/devcontainers/devcontainers.github.io](https://github.com/devcontainers/devcontainers.github.io)
-     * This is the GitHub repo backing the [containers.dev](https://containers.dev/) spec site
-* Open a PR to modify the [collection-index.yml](https://github.com/devcontainers/devcontainers.github.io/blob/gh-pages/_data/collection-index.yml) file
-
-This index is from where [supporting tools](https://containers.dev/supporting) like [VS Code Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and [GitHub Codespaces](https://github.com/features/codespaces) surface Features for their dev container creation UI.
-
-#### Using private Features in Codespaces
-
-For any Features hosted in GHCR that are kept private, the `GITHUB_TOKEN` access token in your environment will need to have `package:read` and `contents:read` for the associated repository.
-
-Many implementing tools use a broadly scoped access token and will work automatically.  GitHub Codespaces uses repo-scoped tokens, and therefore you'll need to add the permissions in `devcontainer.json`
-
-An example `devcontainer.json` can be found below.
-
-```jsonc
-{
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "features": {
-     "ghcr.io/my-org/private-features/hello:1": {
-            "greeting": "Hello"
-        }
-    },
-    "customizations": {
-        "codespaces": {
-            "repositories": {
-                "my-org/private-features": {
-                    "permissions": {
-                        "packages": "read",
-                        "contents": "read"
-                    }
-                }
-            }
-        }
-    }
-}
-```
+Published GHCR packages default to `private`. To use a Feature in another `devcontainer.json` without extra auth setup, mark its package `public` from the package's settings page on GitHub (`https://github.com/users/<owner>/packages/container/<repo>%2F<featureName>/settings`).
