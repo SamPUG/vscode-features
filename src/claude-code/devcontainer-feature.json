@@ -1,0 +1,28 @@
+{
+    "name": "Claude Code Setup",
+    "id": "claude-code",
+    "version": "1.0.0",
+    "description": "Installs the Claude Code CLI, adds the Claude Code VS Code extension, and drops a CLAUDE.md into the container",
+    "options": {
+        "installCli": {
+            "type": "boolean",
+            "default": true,
+            "description": "Install the Claude Code CLI using the official native installer"
+        },
+        "installClaudeMd": {
+            "type": "boolean",
+            "default": true,
+            "description": "Copy the bundled CLAUDE.md to ~/.claude/CLAUDE.md"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "anthropic.claude-code"
+            ]
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils"
+    ]
+}
