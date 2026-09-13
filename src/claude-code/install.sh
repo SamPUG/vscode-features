@@ -12,6 +12,8 @@ _REMOTE_USER_HOME=${_REMOTE_USER_HOME:-$HOME}
 
 INSTALL_CLI=${INSTALLCLI:-true}
 INSTALL_CLAUDE_MD=${INSTALLCLAUDEMD:-true}
+INSTALL_SETTINGS=${INSTALLSETTINGS:-true}
+INSTALL_SKILLS=${INSTALLSKILLS:-true}
 
 FEATURE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -50,6 +52,20 @@ if [ "$INSTALL_CLAUDE_MD" = "true" ]; then
     echo "Installing CLAUDE.md into $_REMOTE_USER_HOME/.claude..."
     mkdir -p "$_REMOTE_USER_HOME/.claude"
     cp "$FEATURE_DIR/CLAUDE.md" "$_REMOTE_USER_HOME/.claude/CLAUDE.md"
+    chown -R "$_REMOTE_USER" "$_REMOTE_USER_HOME/.claude"
+fi
+
+if [ "$INSTALL_SETTINGS" = "true" ]; then
+    echo "Installing settings.json into $_REMOTE_USER_HOME/.claude..."
+    mkdir -p "$_REMOTE_USER_HOME/.claude"
+    cp "$FEATURE_DIR/settings.json" "$_REMOTE_USER_HOME/.claude/settings.json"
+    chown -R "$_REMOTE_USER" "$_REMOTE_USER_HOME/.claude"
+fi
+
+if [ "$INSTALL_SKILLS" = "true" ]; then
+    echo "Installing skills into $_REMOTE_USER_HOME/.claude/skills..."
+    mkdir -p "$_REMOTE_USER_HOME/.claude/skills"
+    cp -R "$FEATURE_DIR/skills/." "$_REMOTE_USER_HOME/.claude/skills/"
     chown -R "$_REMOTE_USER" "$_REMOTE_USER_HOME/.claude"
 fi
 
