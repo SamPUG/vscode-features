@@ -27,6 +27,11 @@ source dev-container-features-test-lib
 check "claude cli is on PATH" bash -c "command -v claude"
 check "CLAUDE.md was installed" bash -c "test -f \$HOME/.claude/CLAUDE.md"
 check "CLAUDE.md content matches" bash -c "grep -q 'Absolute rules' \$HOME/.claude/CLAUDE.md"
+check "settings.json was installed" bash -c "test -f \$HOME/.claude/settings.json"
+check "settings.json denies .env reads" bash -c "grep -qF 'Read(**/.env)' \$HOME/.claude/settings.json"
+check "settings.json limits model choice" bash -c "grep -qF 'availableModels' \$HOME/.claude/settings.json"
+check "export-memories skill was installed" bash -c "test -f \$HOME/.claude/skills/export-memories/SKILL.md"
+check "export-memories bundler was installed" bash -c "test -f \$HOME/.claude/skills/export-memories/scripts/bundle.sh"
 
 # Report results
 # If any of the checks above exited with a non-zero exit code, the test will fail.

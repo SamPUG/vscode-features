@@ -1,8 +1,8 @@
 {
     "name": "Claude Code Setup",
     "id": "claude-code",
-    "version": "1.0.0",
-    "description": "Installs the Claude Code CLI, adds the Claude Code VS Code extension, and drops a CLAUDE.md into the container",
+    "version": "1.1.0",
+    "description": "Installs the Claude Code CLI, adds the Claude Code VS Code extension, and drops a CLAUDE.md, settings.json and skills into the container",
     "options": {
         "installCli": {
             "type": "boolean",
@@ -13,6 +13,16 @@
             "type": "boolean",
             "default": true,
             "description": "Copy the bundled CLAUDE.md to ~/.claude/CLAUDE.md"
+        },
+        "installSettings": {
+            "type": "boolean",
+            "default": true,
+            "description": "Copy the bundled settings.json to ~/.claude/settings.json, denying the file tools access to .env files"
+        },
+        "installSkills": {
+            "type": "boolean",
+            "default": true,
+            "description": "Copy the bundled skills to ~/.claude/skills, making them available in every project in the container"
         }
     },
     "customizations": {
